@@ -34,7 +34,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "app/page.tsx",
+    "app/components.tsx",
     ".eslintrc.cjs",
     ".next/types/**/*.ts"
 , "app/error.jsx"  ],
