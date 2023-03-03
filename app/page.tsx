@@ -2,27 +2,16 @@
 
 // import { dehydrate } from '@tanstack/react-query';
 import React from 'react';
-import trpc from 'utils/trpc';
 // import getQueryClient from 'utils/getQueryClient';
 // import HydrateClient from 'utils/hydrateClient';
 // import Chat from './chat';
-// import { trpc } from './clientWrapper';
+import { trpc } from './clientWrapper';
 
 type Props = {};
 
-// async function fetchchats() {
-//   const res = await fetch(
-//     'https://api.escuelajs.co/api/v1/products?offset=0&limit=20'
-//   );
-//   const data = await res.json();
-//   return data;
-// }
-
 function page({}: Props) {
-  // const queryclient = getQueryClient();
-  const result = trpc.chatsRoute.chats.useQuery();
-  console.log(result);
-  // const dehydratedState = dehydrate(queryclient);
+  const result = trpc.chatsRoute.chats.useQuery(undefined);
+  console.log(result?.data);
 
   return (
     // <HydrateClient state={dehydratedState}>
@@ -47,4 +36,4 @@ function page({}: Props) {
   );
 }
 
-export default trpc.withTRPC(page);
+export default page;
