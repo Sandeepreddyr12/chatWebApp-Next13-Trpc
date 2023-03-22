@@ -1,14 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Chat extends Document {
-  msg: string;
+  message: string;
+  sender: string;
+  image: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const chatSchema = new Schema(
   {
-    title: String,
+    message: { type: String, required: true },
+    image: {
+      type: String,
+      default: null,
+    },
+    sender: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

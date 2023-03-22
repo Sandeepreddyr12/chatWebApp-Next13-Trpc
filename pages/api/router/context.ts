@@ -2,6 +2,7 @@
 // import superjson from 'superjson';
 import { NextApiRequest, NextApiResponse } from 'next';
 // import * as trpcNext from '@trpc/server/adapters/next';
+import connectMongo from '../../../db/connectMongoDB';
 
 // we can pass anything in the context, it can be available to all the procedures
 
@@ -12,6 +13,7 @@ export const createContext = async ({
   req: NextApiRequest;
   res: NextApiResponse;
 }) => {
+  await connectMongo();
   return {
     req,
     res,

@@ -1,3 +1,4 @@
+import superjson from 'superjson';
 /**
  * This is your entry point to setup the root configuration for tRPC on the server.
  * - `initTRPC` should only be used once per app.
@@ -9,7 +10,7 @@
  */
 import { initTRPC } from '@trpc/server';
 
-export const t = initTRPC.create();
+export const t = initTRPC.create({ transformer: superjson });
 
 /**
  * Unprotected procedure
