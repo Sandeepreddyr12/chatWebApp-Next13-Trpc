@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
   useEffect,
+  Fragment,
 } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // import getQueryClient from 'utils/getQueryClient';
@@ -19,6 +20,7 @@ import { trpc } from './(components)/clientWrapper';
 import userId from './(components)/userID';
 import Loader from './(components)/cssLoader';
 import storage from './firebaseConfig';
+import loading from './loading';
 
 // type Props = {};
 
@@ -32,25 +34,48 @@ const MyApp: NextPage = () => {
   const [previewUrl, setPreviewUrl] = useState<string | ArrayBuffer | null>(
     null
   );
+  const scrollRef = useRef<HTMLElement>(null);
+  const scrollRefss = useRef<HTMLElement>(null);
+  const [scrollHelper, setScrollHelper] = useState(false);
+
+  const intObserver = useRef();
+  console.log(scrollRefss);
 
   const userID = useMemo(() => {
     return userId();
   }, []);
+  useEffect(() => {
+    // console.log(scrollHelper, scrollRef, scrollRef.current, '♥');
 
-  const setRef = useCallback((node: HTMLDivElement) => {
-    if (node) {
-      node.scrollIntoView({ smooth: true });
+    if (scrollRef?.current && !scrollHelper) {
+      scrollRef.current.scrollIntoView();
+      setScrollHelper(true);
     }
-  }, []);
+  });
 
-  const { data, isLoading, refetch, error } = trpc.chatsRoute.chats.useQuery(
-    msgSort === 'oldestFirst' ? { createdAt: -1 } : { createdAt: 1 }
-    // { refetchInterval: 2000 } // for short polling
+  const {
+    isLoading,
+    fetchNextPage, // function
+    hasNextPage, // boolean
+    isFetchingNextPage, // boolean
+    data,
+    status,
+    error,
+  } = trpc.chatsRoute.chats.useInfiniteQuery(
+    { sortBy: msgSort },
+    {
+      select: (data) => ({
+        pages: [...data.pages].reverse(),
+        // pageParams: [...data.pageParams].reverse(),
+      }),
+      getNextPageParam: (lastPage, allPages) => lastPage.nextPage || undefined,
+    }
+    // initialCursor: 1, // <-- optional you can pass an initialCursor
   );
 
   const mutation = trpc.chatsRoute.addMsg.useMutation({
     onSuccess: () => {
-      refetch();
+      // refetch();
       // console.log('success');
     },
   });
@@ -82,6 +107,9 @@ const MyApp: NextPage = () => {
     setPreviewUrl(null);
     (newMessage.current as HTMLInputElement).value = '';
     setDownloadURL(null);
+    if (scrollRef?.current) {
+      scrollRef.current.scrollIntoView();
+    }
   };
 
   const handleUploadFile = () => {
@@ -112,6 +140,8 @@ const MyApp: NextPage = () => {
 
     // socket.emit('sendMessage', postmessage);
   };
+
+  console.log(scrollRef, 'scroll ref');
 
   useEffect(() => {
     if (!imageFile) {
@@ -161,9 +191,29 @@ const MyApp: NextPage = () => {
     </div>
   );
 
-  if (error)
-    return <div className="noMessage">Oh noooooooo something went wrong!</div>;
+  console.log(hasNextPage, 'hasnext page');
 
+  const lastPostRef = useCallback(
+    (post) => {
+      if (isFetchingNextPage) return;
+
+      if (intObserver.current) intObserver.current.disconnect();
+
+      intObserver.current = new IntersectionObserver((messages) => {
+        if (messages[0].isIntersecting && hasNextPage && scrollHelper) {
+          console.log('We are near the last post!', scrollHelper);
+          fetchNextPage();
+        }
+      });
+
+      if (post) intObserver.current.observe(post);
+    },
+    [isFetchingNextPage, fetchNextPage, hasNextPage, scrollHelper]
+  );
+
+  if (error) {
+    return <div className="noMessage">Oh noooooooo something went wrong!</div>;
+  }
   return (
     <div className="chatBody">
       <div className="selectInput">
@@ -177,21 +227,43 @@ const MyApp: NextPage = () => {
           <option value="oldestFirst">sort oldest to newest</option>
         </select>
       </div>
-      <div style={{ marginTop: '6rem' }}>
+      <div style={{ marginTop: '6rem' }} className="chats">
         {/* eslint-disable-next-line no-nested-ternary */}
         {isLoading ? (
           <div className="chatLoader">
             <Loader />
           </div>
-        ) : data?.length ? (
-          data.map((msg) => (
-            // eslint-disable-next-line no-underscore-dangle
-            <div key={msg._id.toString()} ref={setRef}>
-              <Chats userId={userID} data={msg} />
-            </div>
-          ))
         ) : (
-          <div className="noMessage">No messages, lets chat</div>
+          <div>
+            {hasNextPage && <div ref={lastPostRef}>Loading more...</div>}
+            {data.pages.map((group, pIndex) => {
+              return (
+                <Fragment key={pIndex}>
+                  {group.messages?.length ? (
+                    group.messages.map((msg, ind) => {
+                      // if (ind === 0) {
+                      //   return (
+                      //     // eslint-disable-next-line no-underscore-dangle
+                      //     <div key={msg._id.toString()} ref={lastPostRef}>
+                      //       <Chats userId={userID} data={msg} />
+                      //     </div>
+                      //   );
+                      // }
+                      // eslint-disable-next-line no-return-assign
+                      return (
+                        // eslint-disable-next-line no-underscore-dangle
+                        <div key={msg._id.toString()} ref={scrollRef}>
+                          <Chats userId={userID} data={msg} />
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="noMessage">No messages, lets chat</div>
+                  )}
+                </Fragment>
+              );
+            })}
+          </div>
         )}
       </div>
       <div className="inputs">

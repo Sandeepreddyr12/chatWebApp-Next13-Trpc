@@ -62,8 +62,8 @@ a {
 
 /* chat body */
 
-/* .chatBody{
-  width: 100%;
+/* .chats{
+  height: 80vh;
 }  */
 
 /* sort select  */
@@ -96,7 +96,7 @@ select {
   list-style: none;
   background: none;
   padding: 0 0 50px 0;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 .chat li {
   padding: 0.5rem;

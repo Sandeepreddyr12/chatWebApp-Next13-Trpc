@@ -4,25 +4,51 @@ import ChatsModel from 'db/models/chatsModel';
 // import { createRouter } from './context';
 import { TRPCError } from '@trpc/server';
 import { t } from '../../../trpc';
+
 // import Chat from '../../../db/models/chatsModel';
 
 export const chatsRouter = t.router({
   chats: t.procedure
     .input(
       z.object({
-        createdAt: z.number(),
+        sortBy: z.string(),
+        cursor: z.number().optional().default(0),
       })
     )
     .query(async ({ input }) => {
+      const { cursor, sortBy } = input;
+      console.log(cursor, sortBy);
+      const Sorting =
+        sortBy === 'oldestFirst' ? { createdAt: 1 } : { createdAt: -1 };
       try {
         // await connectMongo(); // connect to the database
-        const chats = await ChatsModel.find().sort(input);
-        return chats;
+        // const TotalDoc = await ChatsModel.countDocuments();
+
+        // Fetch the data from the database using the mongoose model
+        const data = await ChatsModel.find()
+          .sort(Sorting)
+          .skip(cursor)
+          .limit(10)
+          .exec();
+
+        const messages = data.reverse();
+
+        // Count the total number of documents in the collection
+        const totalCount = await ChatsModel.countDocuments().exec();
+
+        // Calculate the offset of the next page
+        const nextPage = cursor + 10 < totalCount ? cursor + 10 : null;
+
+        // Return the messages and the offset of the next page
+        return {
+          messages,
+          nextPage,
+        };
         // return 'hi from chat router';
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'boom from chat',
+          message: 'boom from query',
         });
       }
     }),
