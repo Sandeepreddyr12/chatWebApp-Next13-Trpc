@@ -20,7 +20,6 @@ import { trpc } from './(components)/clientWrapper';
 import userId from './(components)/userID';
 import Loader from './(components)/cssLoader';
 import storage from './firebaseConfig';
-import loading from './loading';
 
 // type Props = {};
 
@@ -44,14 +43,6 @@ const MyApp: NextPage = () => {
   const userID = useMemo(() => {
     return userId();
   }, []);
-  useEffect(() => {
-    // console.log(scrollHelper, scrollRef, scrollRef.current, '♥');
-
-    if (scrollRef?.current && !scrollHelper) {
-      scrollRef.current.scrollIntoView();
-      setScrollHelper(true);
-    }
-  });
 
   const {
     isLoading,
@@ -73,10 +64,53 @@ const MyApp: NextPage = () => {
     // initialCursor: 1, // <-- optional you can pass an initialCursor
   );
 
+  useEffect(() => {
+    // console.log(scrollHelper, scrollRef, scrollRef.current, '♥');
+
+    if (scrollRef?.current && !scrollHelper) {
+      scrollRef.current.scrollIntoView();
+      setScrollHelper(true);
+    }
+  });
+
+  const utils = trpc.useContext();
+
   const mutation = trpc.chatsRoute.addMsg.useMutation({
-    onSuccess: () => {
-      // refetch();
-      // console.log('success');
+    onMutate: async (data) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await utils.chatsRoute.chats.cancel();
+
+      // Snapshot the previous value
+      const previousMessages = utils.chatsRoute.chats.getData();
+
+      console.log(previousMessages, 'previous messages');
+
+      // Optimistically update to the new value
+      utils.chatsRoute.chats.setData((old) => {
+        console.log(old, data, '🔴');
+        return [
+          ...old,
+          {
+            _id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            ...data,
+          },
+        ];
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousMessages };
+    },
+    // If the mutation fails,
+    // use the context returned from onMutate to roll back
+    onError: (err, newMsg, context) => {
+      utils.chatsRoute.chats.setData(context?.previousMessages);
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      console.log('onsettled');
+      utils.chatsRoute.chats.invalidate();
     },
   });
 
@@ -107,9 +141,6 @@ const MyApp: NextPage = () => {
     setPreviewUrl(null);
     (newMessage.current as HTMLInputElement).value = '';
     setDownloadURL(null);
-    if (scrollRef?.current) {
-      scrollRef.current.scrollIntoView();
-    }
   };
 
   const handleUploadFile = () => {
