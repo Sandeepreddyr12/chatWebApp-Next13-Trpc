@@ -15,6 +15,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import Image from 'next/image';
 import type { NextPage } from 'next';
+import { v4 as uuidv4 } from 'uuid';
 import Chats from './(components)/chat';
 import { trpc } from './(components)/clientWrapper';
 import userId from './(components)/userID';
@@ -36,14 +37,14 @@ const MyApp: NextPage = () => {
   const scrollRef = useRef<HTMLElement>(null);
   const scrollRefss = useRef<HTMLElement>(null);
   const [scrollHelper, setScrollHelper] = useState(false);
-
   const intObserver = useRef();
-  console.log(scrollRefss);
 
+  // geeting unique user ID
   const userID = useMemo(() => {
     return userId();
   }, []);
 
+  // use Infinite query
   const {
     isLoading,
     fetchNextPage, // function
@@ -64,19 +65,12 @@ const MyApp: NextPage = () => {
     // initialCursor: 1, // <-- optional you can pass an initialCursor
   );
 
-  useEffect(() => {
-    // console.log(scrollHelper, scrollRef, scrollRef.current, '♥');
-
-    if (scrollRef?.current && !scrollHelper) {
-      scrollRef.current.scrollIntoView();
-      setScrollHelper(true);
-    }
-  });
+  // message mutation
 
   const utils = trpc.useContext();
 
   const mutation = trpc.chatsRoute.addMsg.useMutation({
-    onMutate: async (data) => {
+    onMutate: async (Msgdata) => {
       // Cancel any outgoing refetches
       // (so they don't overwrite our optimistic update)
       await utils.chatsRoute.chats.cancel();
@@ -84,19 +78,19 @@ const MyApp: NextPage = () => {
       // Snapshot the previous value
       const previousMessages = utils.chatsRoute.chats.getData();
 
-      console.log(previousMessages, 'previous messages');
-
       // Optimistically update to the new value
       utils.chatsRoute.chats.setData((old) => {
-        console.log(old, data, '🔴');
-        return [
+        return {
           ...old,
-          {
-            _id: Date.now().toString(),
-            createdAt: new Date().toISOString(),
-            ...data,
-          },
-        ];
+          data: [
+            ...old.data,
+            {
+              _id: Date.now().toString(),
+              createdAt: new Date().toISOString(),
+              ...Msgdata,
+            },
+          ],
+        };
       });
 
       // Return a context object with the snapshotted value
@@ -109,10 +103,11 @@ const MyApp: NextPage = () => {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      console.log('onsettled');
       utils.chatsRoute.chats.invalidate();
     },
   });
+
+  // file input Handler
 
   const handleSelectedFile = (files: any) => {
     if (files && files[0].size < 10000000) {
@@ -143,8 +138,13 @@ const MyApp: NextPage = () => {
     setDownloadURL(null);
   };
 
+  // fileupload handler
+
   const handleUploadFile = () => {
-    const { name } = imageFile;
+    let { name } = imageFile;
+    const arr = name.split('.');
+    name = `${uuidv4()}.${arr[1]}`;
+    console.log(name, imageFile, '🔴');
     const storageRef = ref(storage, `chatImg/${name}`);
     uploadBytesResumable(storageRef, imageFile).then((snapshot) => {
       getDownloadURL(snapshot.ref)
@@ -172,7 +172,7 @@ const MyApp: NextPage = () => {
     // socket.emit('sendMessage', postmessage);
   };
 
-  console.log(scrollRef, 'scroll ref');
+  // image preview of image inputhandler
 
   useEffect(() => {
     if (!imageFile) {
@@ -222,7 +222,7 @@ const MyApp: NextPage = () => {
     </div>
   );
 
-  console.log(hasNextPage, 'hasnext page');
+  // infinite scrolling with intersection observer
 
   const lastPostRef = useCallback(
     (post) => {
@@ -232,7 +232,6 @@ const MyApp: NextPage = () => {
 
       intObserver.current = new IntersectionObserver((messages) => {
         if (messages[0].isIntersecting && hasNextPage && scrollHelper) {
-          console.log('We are near the last post!', scrollHelper);
           fetchNextPage();
         }
       });
@@ -245,6 +244,14 @@ const MyApp: NextPage = () => {
   if (error) {
     return <div className="noMessage">Oh noooooooo something went wrong!</div>;
   }
+
+  useEffect(() => {
+    if (scrollRef?.current && !scrollHelper) {
+      scrollRef.current.scrollIntoView();
+      setScrollHelper(true);
+    }
+  });
+
   return (
     <div className="chatBody">
       <div className="selectInput">
