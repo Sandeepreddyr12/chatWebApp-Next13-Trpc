@@ -144,7 +144,6 @@ const MyApp: NextPage = () => {
     let { name } = imageFile;
     const arr = name.split('.');
     name = `${uuidv4()}.${arr[1]}`;
-    console.log(name, imageFile, '🔴');
     const storageRef = ref(storage, `chatImg/${name}`);
     uploadBytesResumable(storageRef, imageFile).then((snapshot) => {
       getDownloadURL(snapshot.ref)
