@@ -1,18 +1,12 @@
 
- typescript stack --chat app(Next js, TRPC, react query, zod, Mongodb/Mongoose)
+ typescript stack --chat app(Next js, TRPC, react query, zod, Mongodb/Mongoose, firebase file upload( s3 code removed cause of card issues))
  
  next js 13( with mordern file structure)
 
 
+note: here im use react trpc adapter in frontend.( next client adapter not supported for next 13 mordern file structure) 
 
-
-edit-: haven't succeced/developed yet.( i'm trying......
- tried/modified the code like 500+ times still facing some hydration issues while re-rendering.
-
-
-no docs available for reactquery with next 13(new file structure).
-
-
+there is lots of hydration issues, after hundreds of attempts i switched from next adapter to react adopter, working just enough for now .
 
 
 --------------------------------------------------------------------------------------------------
