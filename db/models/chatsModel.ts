@@ -22,13 +22,6 @@ const chatSchema = new Schema(
   { timestamps: true }
 );
 
-// let mod: typeof mongoose.Model;
-// try {
-//   mod = mongoose.model('chats', chatsSchema);
-// } catch (e) {
-//   mod = mongoose.model('chats');
-// }
-
 const ChatsModel = mongoose.model<Chat>('Chats', chatSchema);
 
 export default ChatsModel;

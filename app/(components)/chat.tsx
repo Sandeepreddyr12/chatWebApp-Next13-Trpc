@@ -15,8 +15,6 @@ interface Props {
 }
 
 export default function Chats({ userId, data }: Props) {
-  // const { refetch } = trpc.chatsRoute.chats.useQuery();
-
   const mutation = trpc.chatsRoute.deleteMsg.useMutation({
     onSuccess: () => {
       // refetch();
@@ -31,6 +29,15 @@ export default function Chats({ userId, data }: Props) {
           .catch((err) => {
             console.log(err);
           });
+      }
+    },
+
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        console.error(errorMessage[0]);
+      } else {
+        console.error('Failed to post! Please try again later.');
       }
     },
   });

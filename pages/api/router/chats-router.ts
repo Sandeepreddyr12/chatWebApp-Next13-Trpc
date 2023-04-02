@@ -17,12 +17,10 @@ export const chatsRouter = t.router({
     )
     .query(async ({ input }) => {
       const { cursor, sortBy } = input;
-      console.log(cursor, sortBy);
       const Sorting =
         sortBy === 'oldestFirst' ? { createdAt: 1 } : { createdAt: -1 };
       try {
         // await connectMongo(); // connect to the database
-        // const TotalDoc = await ChatsModel.countDocuments();
 
         // Fetch the data from the database using the mongoose model
         const data = await ChatsModel.find()
@@ -48,7 +46,7 @@ export const chatsRouter = t.router({
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'boom from query',
+          message: 'Error occured unable to fetch messages',
         });
       }
     }),
@@ -56,7 +54,7 @@ export const chatsRouter = t.router({
   addMsg: t.procedure
     .input(
       z.object({
-        message: z.string(),
+        message: z.string().min(1).max(280),
         sender: z.string(),
         image: z.string().nullable(),
       })
@@ -70,7 +68,7 @@ export const chatsRouter = t.router({
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'boom from chat',
+          message: 'unable to send message',
         });
       }
     }),
@@ -88,7 +86,7 @@ export const chatsRouter = t.router({
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'boom from chat',
+          message: 'deleting message failed, try again',
         });
       }
     }),
