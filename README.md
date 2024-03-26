@@ -1,6 +1,8 @@
 
  typescript stack --chat app(Next js, TRPC, react query, zod, Mongodb/Mongoose, firebase file upload( s3 code removed cause of card issues))
- 
+ ![Screenshot (316)](https://github.com/Sandeepreddyr12/chatWebapp-Next13-Trpc/assets/46469596/72d4591c-9452-4a9f-84c2-1fddc245f5d1)
+![Screenshot (317)](https://github.com/Sandeepreddyr12/chatWebapp-Next13-Trpc/assets/46469596/28f1afc8-966d-4694-ae16-baba0010eeda)
+
  next js 13( with mordern file structure)
 
 
